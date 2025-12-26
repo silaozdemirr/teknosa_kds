@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teknosa Dashboard</title>
+
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+
+<body>
+
+<div class="dashboard-container">
+
+  <!-- SOL MENÜ -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <img src="../images/teknosa_logo.png" alt="Teknosa Logo">
+    </div>
+
+    <ul>
+      <li class="menu-item active" data-target="anasayfa">Anasayfa</li>
+      <li class="menu-item" data-target="subeler">Şubeler & Analizler</li>
+      <li class="menu-item" data-target="lokasyonlar">Lokasyonlar</li>
+      <li class="menu-item" data-target="subeYonetim">Şube Yönetimi</li>
+    </ul>
+
+    <button id="logoutBtn">Çıkış Yap</button>
+  </div>
+
+  <!-- İÇERİK -->
+  <div class="content">
+
+    <!-- ANASAYFA -->
+    <div id="anasayfa" class="page active-page">
+      <section class="kds-anasayfa-container">
+
+        <h1 class="kds-anasayfa-title">
+          Teknosa İzmir Karar Destek Sistemi: Stratejik Strateji ve Performans Paneli
+        </h1>
+      
+        <p class="kds-anasayfa-desc">
+          Bu panel, İzmir’deki Teknosa şubelerinin satış, müşteri yoğunluğu ve kârlılık verilerini analiz ederek 
+          yöneticilere geleceğe yönelik karar desteği sağlar. Sistem düşük performanslı şubeleri tespit eder, 
+          yeni mağaza açılabilecek ilçeler önerir ve nüfus verileriyle entegrasyon sağlar.
+        </p>
+
+        <div class="mini-analytic-card-wrapper">
+
+          <div class="mini-analytic-card">
+            <span class="mini-analytic-title">Toplam Şube Sayısı</span>
+            <strong id="miniToplamSube">-</strong>
+          </div>
+
+          <div class="mini-analytic-card tooltip-parent">
+            <span class="mini-analytic-title">Önerilen Yeni İlçe</span>
+            <strong id="miniBubbleYeniIlce">-</strong>
+
+            <div class="mini-tooltip">
+                Bubble grafiği skor analizine göre:
+                nüfus + kâr + düşük rakip yoğunluk değerlendirilerek seçilir.
+            </div>
+          </div>
+
+          <div class="mini-analytic-card tooltip-parent">
+            <span class="mini-analytic-title">Kapatılması Önerilen İlçe</span>
+            <strong id="miniKapatmaIlce">-</strong>
+          
+            <div class="mini-tooltip">
+                Bu ilçede düşen kâr verileri ve rekabet yoğunluğu incelenerek önerilir.
+            </div>
+          </div>                          
+        
+        </div>   
+            
+      </section>
+
+      <div class="charts-wrapper">
+          <div class="satis-maliyet-kar-wrapper">
+              <div class="satis-header-line">
+                  <h2>Şubelerin Yıllık Satış – Maliyet – Kâr Analizi</h2>
+                  <select id="satisMaliyetYearSelect">
+                      <option value="2025" selected>2025</option>
+                      <option value="2024">2024</option>
+                      <option value="2023">2023</option>
+                      <option value="2022">2022</option>
+                  </select>
+              </div>
+              <canvas id="chartSatisMaliyetKar"></canvas>
+          </div>
+        
+          <div class="bubble-container">
+              <div class="bubble-header">
+                  <h2 id="bubbleChartTitle" class="chart-title">İlçe Nüfus – Kâr – Rekabet Matrisi <span id="bubbleMatrixInfo" class="info-icon">ⓘ</span></h2>
+                  <select id="bubbleYearSelect">
+                      <option value="2025" selected>2025</option>
+                      <option value="2024">2024</option>
+                      <option value="2023">2023</option>
+                      <option value="2022">2022</option>
+                  </select>
+              </div>
+              <canvas id="ilceBubbleChartCanvas"></canvas>
+
+              <div id="bubbleInfoTooltip" class="bubble-info-tooltip">
+                Balon boyutu rakip sayısını gösterir.<br>
+                Balon ne kadar yüksekse o kadar kârlıdır, sağa gittikçe nüfus artar.
+              </div>
+
+              <div id="bubbleMatrixTooltip" class="bubble-matrix-tooltip">
+                <strong>Yorumlama Rehberi</strong><br><br>
+                            
+                <b>Yüksek nüfus + yüksek kâr + düşük rakip</b><br>
+                Yatırım için ideal güçlü bölge.<br><br>
+                            
+                <b>Yüksek nüfus + düşük kâr + çok rakip</b><br>
+                Verimsiz veya kayıp bölge, kapama / yeniden konumlandırma adayı.<br><br>
+                            
+                <b>Düşük nüfus + yüksek kâr</b><br>
+                Şube yönetiminin çok başarılı olduğu ilçe.<br><br>
+                            
+                <b>Düşük nüfus + düşük kâr</b><br>
+                Girişi önermeyen veya zayıf potansiyele sahip alan.
+              </div>
+          </div>
+      </div>      
+    </div>
+
+    <!-- Şubeler Sayfası -->
+    <div id="subeler" class="page">
+  
+
+       <!-- SOL & SAĞ PANEL WRAPPER -->
+      <div class="compare-and-newchart-wrapper">
+    
+      <!-- KARŞILAŞTIRMA PANELİ -->
+      <div class="compare-panel">
+        <h3 class="page-title">
+          Şubelerin Yıllık Kâr Performanslarının Karşılaştırılması
+        </h3>    
+        <div class="branch-select-row">
+          <div class="branch-select">
+            <label>Şube 1</label>
+            <select id="sube1"></select>
+          </div>
+        
+          <div class="branch-select">
+            <label>Şube 2</label>
+            <select id="sube2"></select>
+          </div>
+        </div>
+     
+   
+        <div class="filter-panel">
+          <label>
+            <input type="checkbox" class="metric-checkbox" value="gelir" checked>
+            Gelir
+          </label>
+              
+          <label>
+            <input type="checkbox" class="metric-checkbox" value="gider" checked>
+            Gider
+          </label>
+              
+          <label>
+            <input type="checkbox" class="metric-checkbox" value="kar" checked>
+            Kâr
+          </label>
+              
+        </div>
+        <canvas id="yoneticiPerformansChart"></canvas>
+        </div>
+
+            <!-- SAĞ: Yeni Grafik -->
+        <div class="new-chart-panel" style="flex:1;">
+          <h3>İlçe Bazlı Kâr ve Nüfus Analizi (2025)</h3>
+          <canvas id="ilceKarNufusChart"></canvas>
+          <div id="kdsLegend" style="margin-top:10px; font-size:14px;">
+           <br> <span style="color:#4CAF50; font-weight:bold;">Yeşil:</span> Başarılı yönetim (az nüfus + yüksek kâr) &nbsp;  &nbsp;<br>
+            <span style="color:#FFB74D; font-weight:bold;">Turuncu:</span> Yatırım önceliği (yüksek nüfus + yüksek kâr) &nbsp;  &nbsp;<br>
+            <span style="color:#e53935; font-weight:bold;">Kırmızı:</span> Verimsiz şube (çok nüfus + düşük kâr)
+          </div>
+
+        </div>
+      </div>
+      
+      <!-- BAŞLIK + YIL SEÇİM -->
+      <div class="chart-header">
+        <h3>Seçilen Yıla Göre En Yüksek / En Düşük Kâr Eden Şubeler</h3>
+            
+        <select id="yearSelect">
+          <option value="2022">2022</option>
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option selected value="2025">2025</option>
+        </select>
+      </div>
+
+      <div class="chart-wrapper">
+    
+        <!-- TOP / LOW 5 -->
+        <div class="chart-row">
+          <div class="chart-area half">
+            <h3>En Yüksek Kâr Elde Eden Şubeler</h3>
+            <canvas id="top5Chart"></canvas>
+          </div>
+        
+          <div class="chart-area half">
+            <h3>En Düşük Kâr Elde Eden Şubeler</h3>
+            <canvas id="low5Chart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+
+    </div>
+
+    <!-- LOKASYONLAR -->
+    <div id="lokasyonlar" class="page">
+      <h1 class="kds-lokasyonlar-title">Şube Lokasyonları & Yoğunluk Analizi</h1>
+
+    
+      <!-- İKİ HARİTA YAN YANA -->
+      <div class="map-row">
+      
+        <!-- SOL: ŞUBE LOKASYONLARI -->
+        <div class="map-box">
+          <h3>Şube Lokasyonları</h3>
+          <div id="map"></div>
+        </div>
+      
+        <!-- SAĞ: YOĞUNLUK HARİTASI -->
+        <div class="map-box">
+          <h3>Müşteri & Satış Yoğunluğu</h3>
+          <div id="heatMap"></div>
+        </div>
+      
+      </div>
+    
+      <!-- TABLO -->
+      <div class="table-box">
+        <table id="lokasyonTable">
+          <thead>
+            <tr>
+              <th>Şube Adı</th>
+              <th>İlçe</th>
+              <th>Gelişmişlik Puanı</th>
+              <th>Rakip Sayısı</th>
+              <th class="verim-tooltip-parent">
+                Şube Verim Puanı
+                <div class="verim-tooltip">
+                  Verim = toplam kar / toplam müşteri
+                </div>
+              </th>
+
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ŞUBE YÖNETİM SAYFASI -->
+    <div id="subeYonetim" class="page">
+      <h2>Şube Yönetimi</h2>
+    
+      <form id="subeEkleForm">
+        <input type="text" id="subeAdiInput" placeholder="Şube Adı" required>
+        <input type="text" id="ilceSelect" placeholder="İlçe" required>
+        <input type="text" id="enlemInput" placeholder="Enlem" required>
+        <input type="text" id="boylamInput" placeholder="Boylam" required>
+        <button type="submit">Şube Ekle</button>
+      </form>
+      <div id="subeEkleUyari" style="margin-top:10px;"></div>
+    
+      <hr>
+    
+      <h3>Mevcut Şubeler</h3>
+      <table id="subeListeTablo">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Şube Adı</th>
+            <th>İlçe</th>
+            <th>Sil</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCRIPTLER -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="../js/app.js"></script>
+<script>
+
+  if (localStorage.getItem("forceHome") === "yes") {
+    localStorage.setItem("activeDashboardPage", "anasayfa");
+    localStorage.removeItem("forceHome");
+  }
+
+  // Eğer index.html’den gelindiyse, active page temizlensin
+  if (document.referrer.includes("index.html")) {
+    localStorage.removeItem("activeDashboardPage");
+  }
+
+  const menuItems = document.querySelectorAll(".menu-item");
+  const pages = document.querySelectorAll(".page");
+  const linkCards = document.querySelectorAll(".link-card");
+
+  const STORAGE_KEY = "activeDashboardPage";
+
+  function navigate(target, save = true) {
+    pages.forEach(p => p.classList.remove("active-page"));
+    document.getElementById(target)?.classList.add("active-page");
+
+    menuItems.forEach(m => m.classList.remove("active"));
+    document
+      .querySelector(`.menu-item[data-target="${target}"]`)
+      ?.classList.add("active");
+
+    if (save) {
+      localStorage.setItem(STORAGE_KEY, target);
+    }
+
+
+    //ANASAYFA
+    if (target === "anasayfa") {
+      setTimeout(() => {
+        loadMiniCards();
+      }, 200);
+    }
+
+    // ŞUBELER
+    if (target === "subeler") {
+      setTimeout(() => {
+        loadKarsilastirmaGrafik();
+      }, 200);
+    }
+
+    // LOKASYONLAR
+    if (target === "lokasyonlar") {
+      setTimeout(() => {
+        loadLokasyonlar();
+        map?.invalidateSize();
+        heatMap?.invalidateSize();
+      }, 200);
+    }
+  }
+
+  // Menü tıklamaları
+  menuItems.forEach(item => {
+    item.addEventListener("click", () => {
+      navigate(item.dataset.target);
+    });
+  });
+
+  // Sayfa ilk açılış
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedPage = localStorage.getItem(STORAGE_KEY);
+    navigate(savedPage || "anasayfa", false);
+  });
+</script>
+
+</body>
+</html>
